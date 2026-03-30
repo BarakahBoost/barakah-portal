@@ -31,7 +31,7 @@
 // BACKEND URL — vul jouw Render.com URL in na deployment
 // Zie HANDLEIDING.md voor instructies
 // ═══════════════════════════════════════════════════════════
-const BACKEND_URL = "https://barakah-portal-api.onrender.com";
+const BACKEND_URL = "JOUW_RENDER_URL_HIER";
 // Voorbeeld: const BACKEND_URL = "https://barakah-portal-api.onrender.com";
 
 // ═══════════════════════════════════════════════════════════
@@ -96,14 +96,23 @@ function load() {
   try {
     const d = JSON.parse(localStorage.getItem(SK)||"null");
     if (d && d.agency) {
-      d.agency.whatsapp  = "31685546310"; // altijd correct nummer
-      // Migreer oud wachtwoord
+      d.agency.whatsapp = "31685546310";
       if (d.agency.password === "admin123") d.agency.password = "barakah2026";
     }
     return d;
   } catch { return null; }
 }
-function save(d) { localStorage.setItem(SK,JSON.stringify(d)); }
+function save(d) {
+  localStorage.setItem(SK, JSON.stringify(d));
+  // Ook opslaan op server als backend beschikbaar is
+  if (BACKEND_URL && !BACKEND_URL.includes("JOUW_RENDER")) {
+    fetch(`${BACKEND_URL}/portal-data`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(d)
+    }).catch(() => {}); // stil falen
+  }
+}
 
 const DEMO = {
   agency:{ password:"barakah2026", whatsapp:"31685546310", name:"BarakahPortal" },
@@ -1315,10 +1324,30 @@ function App() {
     else{save(fn);setData(fn);}
   }
 
-  // Forceer altijd correct WhatsApp nummer
+  // Laad data van server bij opstarten
   useEffect(()=>{
-    if(data.agency?.whatsapp !== "31685546310")
-      setData(d=>({...d,agency:{...d.agency,whatsapp:"31685546310"}}));
+    if(BACKEND_URL && !BACKEND_URL.includes("JOUW_RENDER")) {
+      fetch(`${BACKEND_URL}/portal-data`)
+        .then(r => r.json())
+        .then(res => {
+          if(res.success && res.data && res.data.clients !== undefined) {
+            const serverData = res.data;
+            // Forceer correct WA nummer
+            if(serverData.agency) serverData.agency.whatsapp = "31685546310";
+            if(serverData.agency?.password === "admin123") serverData.agency.password = "barakah2026";
+            setData(serverData);
+            localStorage.setItem(SK, JSON.stringify(serverData));
+          }
+        })
+        .catch(() => {
+          // Server niet bereikbaar — gebruik lokale data
+          if(data.agency?.whatsapp !== "31685546310")
+            setData(d=>({...d,agency:{...d.agency,whatsapp:"31685546310"}}));
+        });
+    } else {
+      if(data.agency?.whatsapp !== "31685546310")
+        setData(d=>({...d,agency:{...d.agency,whatsapp:"31685546310"}}));
+    }
   },[]);
   useEffect(()=>{save(data);},[data]);
 
