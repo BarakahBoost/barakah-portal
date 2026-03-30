@@ -10,22 +10,18 @@
   <meta name="apple-mobile-web-app-title" content="BarakahPortal"/>
   <link rel="apple-touch-icon" href="/icon-192.png"/>
   <title>BarakahPortal</title>
-  <style>*{margin:0;padding:0;box-sizing:border-box}body{background:#07080F}</style>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #07080F; font-family: system-ui, -apple-system, sans-serif; }
+  </style>
 </head>
 <body>
   <div id="root"></div>
-
-  <!-- React -->
   <script crossorigin src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
-
-  <!-- Recharts dependencies first -->
   <script src="https://unpkg.com/prop-types@15.8.1/prop-types.min.js"></script>
   <script src="https://unpkg.com/recharts@2.10.3/umd/Recharts.js"></script>
-
-  <!-- Babel for JSX -->
   <script src="https://unpkg.com/@babel/standalone@7.23.6/babel.min.js"></script>
-
   <script type="text/babel" data-presets="react">
     const { useState, useEffect } = React;
     const { BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } = window.Recharts;
@@ -519,30 +515,49 @@ function buildPDFHtml(client) {
 // ═══════════════════════════════════════════════════════════
 function PDFModal({ client, onClose }) {
   const html = buildPDFHtml(client);
+
+  function downloadHTML() {
+    const full = `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="margin:0;background:#f7f9f7">${html}</body></html>`;
+    const blob = new Blob([full], {type:"text/html"});
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement("a");
+    a.href     = url;
+    a.download = `BarakahPortal-${client.name.replace(/\s+/g,"-")}-rapport.html`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(()=>URL.revokeObjectURL(url), 1000);
+  }
+
+  function printPDF() {
+    const iframe = document.getElementById("pdf-iframe");
+    if(iframe && iframe.contentWindow) {
+      iframe.contentWindow.focus();
+      iframe.contentWindow.print();
+    } else {
+      downloadHTML();
+    }
+  }
+
   return (
     <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.88)",zIndex:4000,display:"flex",flexDirection:"column",backdropFilter:"blur(8px)"}}>
-      {/* Toolbar */}
-      <div style={{background:"#1A5C1A",padding:"12px 20px",display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0,boxShadow:"0 2px 12px rgba(0,0,0,0.4)"}}>
-        <div style={{display:"flex",alignItems:"center",gap:12}}>
-          <span style={{color:"#fff",fontWeight:800,fontSize:15}}>📄 {client.name} — Rapport</span>
-        </div>
-        <div style={{display:"flex",gap:10,alignItems:"center"}}>
-          <span style={{color:"rgba(255,255,255,0.6)",fontSize:12}}>Druk op Afdrukken → kies "Opslaan als PDF"</span>
-          <button
-            onClick={()=>{
-              const iframe = document.getElementById("pdf-iframe");
-              iframe.contentWindow.focus();
-              iframe.contentWindow.print();
-            }}
-            style={{background:"#fff",color:"#1A5C1A",border:"none",borderRadius:10,padding:"9px 20px",fontWeight:800,fontSize:14,cursor:"pointer",fontFamily:"inherit"}}>
-            🖨 Afdrukken / PDF opslaan
+      <div style={{background:"#1A5C1A",padding:"12px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0,flexWrap:"wrap",gap:8}}>
+        <span style={{color:"#fff",fontWeight:800,fontSize:15}}>📄 {client.name}</span>
+        <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
+          <button onClick={printPDF}
+            style={{background:"#fff",color:"#1A5C1A",border:"none",borderRadius:10,padding:"8px 16px",fontWeight:800,fontSize:13,cursor:"pointer",fontFamily:"inherit"}}>
+            🖨 Afdrukken
           </button>
-          <button onClick={onClose} style={{background:"rgba(255,255,255,0.15)",color:"#fff",border:"1px solid rgba(255,255,255,0.25)",borderRadius:10,padding:"9px 14px",fontWeight:600,fontSize:14,cursor:"pointer",fontFamily:"inherit"}}>
-            ✕ Sluiten
+          <button onClick={downloadHTML}
+            style={{background:"rgba(255,255,255,0.2)",color:"#fff",border:"1px solid rgba(255,255,255,0.4)",borderRadius:10,padding:"8px 16px",fontWeight:700,fontSize:13,cursor:"pointer",fontFamily:"inherit"}}>
+            ⬇️ Downloaden
+          </button>
+          <button onClick={onClose}
+            style={{background:"rgba(255,255,255,0.1)",color:"#fff",border:"1px solid rgba(255,255,255,0.2)",borderRadius:10,padding:"8px 14px",fontWeight:600,fontSize:13,cursor:"pointer",fontFamily:"inherit"}}>
+            ✕
           </button>
         </div>
       </div>
-      {/* Preview iframe */}
       <iframe
         id="pdf-iframe"
         srcDoc={`<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="margin:0;background:#f7f9f7">${html}</body></html>`}
@@ -568,10 +583,10 @@ function LoginScreen({ data, onLogin }) {
       backgroundImage:"radial-gradient(ellipse at 20% 50%, #0A2A0A 0%, transparent 55%), radial-gradient(ellipse at 80% 20%, #081808 0%, transparent 50%)"}}>
       <div style={{width:"100%",maxWidth:400}}>
         <div style={{textAlign:"center",marginBottom:44}}>
-          <div style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:72,height:72,borderRadius:22,background:`linear-gradient(135deg,${T.primary},${T.primaryMid})`,marginBottom:20,boxShadow:`0 8px 32px ${T.primary}55`}}>
-            <LogoImg height={32} variant="white"/>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"center",width:130,height:130,borderRadius:28,background:`linear-gradient(135deg,${T.primary},${T.primaryMid})`,marginBottom:20,marginLeft:"auto",marginRight:"auto",boxShadow:`0 8px 32px ${T.primary}55`}}>
+            <LogoImg height={44} variant="white" style={{maxWidth:100}}/>
           </div>
-          <LogoImg height={30} variant="green" style={{display:"block",margin:"0 auto"}}/>
+          <div style={{textAlign:"center",marginTop:4}}><span style={{fontSize:22,fontWeight:900,color:T.accentBright,letterSpacing:-0.5}}>Welkom!</span></div>
           <div style={{color:T.mutedLight,fontSize:13,marginTop:8}}>Social Media Management Platform</div>
         </div>
         <div style={{display:"flex",background:T.card,borderRadius:16,padding:4,marginBottom:22,border:`1px solid ${T.border}`}}>
@@ -630,7 +645,7 @@ function ClientPortal({ data, setData, clientId, onLogout }) {
     <div style={{minHeight:"100vh",background:T.bg,color:T.text,fontFamily:"DM Sans,Segoe UI,sans-serif",paddingBottom:isMob?88:0}}>
       {/* Header */}
       <div style={{background:T.surface,borderBottom:`1px solid ${T.border}`,padding:isMob?"13px 16px":"0 30px",display:"flex",alignItems:"center",justifyContent:"space-between",position:"sticky",top:0,zIndex:100,backdropFilter:"blur(12px)",minHeight:60}}>
-        <LogoImg height={isMob?22:26}/>
+        <LogoImg height={isMob?18:26}/>
         <div style={{display:"flex",alignItems:"center",gap:8}}>
           {!isMob&&<><Btn small color={color} onClick={()=>setShowPDF(true)}>📄 PDF</Btn><a href="https://wa.me/31685546310?text=Hoi%20BarakahPortal!%20Ik%20heb%20een%20vraag%3A%20" target="_blank" rel="noreferrer" style={{display:"inline-flex",alignItems:"center",gap:6,background:"transparent",border:`1.5px solid ${T.green}`,color:T.green,borderRadius:10,padding:"7px 14px",fontWeight:700,fontSize:13,textDecoration:"none"}}>💬 WhatsApp</a></>}
           <div style={{display:"flex",alignItems:"center",gap:6}}>
@@ -925,7 +940,7 @@ function AgencyPortal({ data, setData, onLogout }) {
     <div style={{minHeight:"100vh",background:T.bg,color:T.text,fontFamily:"DM Sans,Segoe UI,sans-serif",paddingBottom:isMob?88:0}}>
       {/* Header */}
       <div style={{background:T.surface,borderBottom:`1px solid ${T.border}`,padding:isMob?"13px 16px":"0 30px",display:"flex",alignItems:"center",justifyContent:"space-between",position:"sticky",top:0,zIndex:100,backdropFilter:"blur(12px)",minHeight:60}}>
-        <LogoImg height={isMob?22:26}/>
+        <LogoImg height={isMob?18:26}/>
         <div style={{display:"flex",alignItems:"center",gap:8}}>
           <div style={{background:T.accentSoft,border:`1px solid ${T.accent}33`,borderRadius:8,padding:"3px 10px"}}><span style={{color:T.accent,fontSize:11,fontWeight:700}}>🌿 Agency</span></div>
           {pending.length>0&&<div style={{background:T.redSoft,color:T.red,borderRadius:99,padding:"4px 10px",fontSize:11,fontWeight:800}}>🔔 {pending.length}</div>}
@@ -1014,10 +1029,13 @@ function AgencyPortal({ data, setData, onLogout }) {
                         <div style={{width:46,height:46,borderRadius:13,background:c.color+"22",border:`1px solid ${c.color}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,fontWeight:900,color:c.color}}>{c.name.charAt(0)}</div>
                         <div><div style={{fontWeight:800,fontSize:16,color:T.text}}>{c.name}</div><div style={{color:T.mutedLight,fontSize:13}}>{c.email}</div>{c.tiktokProfile&&<a href={c.tiktokProfile} target="_blank" rel="noreferrer" style={{color:T.tiktok,fontSize:12,textDecoration:"none",fontWeight:600}}>🎵 TikTok profiel ↗</a>}</div>
                       </div>
-                      <div style={{display:"flex",gap:7,alignItems:"center",flexWrap:"wrap"}}><Badge color={left<=2?T.red:c.color}>{left} over</Badge><Btn small color={c.color} onClick={()=>{setActiveClient(c.id);setTab("stats");}}>📊 Stats</Btn><Btn small danger onClick={()=>{
-                          setData(d=>({...d,clients:d.clients.filter(cl=>cl.id!==c.id),bookings:d.bookings.filter(b=>b.clientId!==c.id)}));
-                          if(activeClient===c.id) setActiveClient(data.clients.filter(cl=>cl.id!==c.id)[0]?.id||null);
-                        }}>🗑 Verwijderen</Btn></div>
+                      <div style={{display:"flex",gap:7,alignItems:"center",flexWrap:"wrap"}}><Badge color={left<=2?T.red:c.color}>{left} over</Badge><Btn small color={c.color} onClick={()=>{setActiveClient(c.id);setTab("stats");}}>📊 Stats</Btn><button
+                          style={{background:"#C0392B",border:"none",color:"#fff",borderRadius:10,padding:"8px 14px",cursor:"pointer",fontWeight:700,fontSize:13,fontFamily:"inherit",touchAction:"manipulation"}}
+                          onClick={(e)=>{
+                            e.stopPropagation();
+                            setData(d=>({...d,clients:d.clients.filter(cl=>cl.id!==c.id),bookings:d.bookings.filter(b=>b.clientId!==c.id)}));
+                            if(activeClient===c.id) setActiveClient(data.clients.filter(cl=>cl.id!==c.id)[0]?.id||null);
+                          }}>🗑 Verwijderen</button></div>
                     </div>
                     <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8}}>
                       {[["👁",c.videos.reduce((s,v)=>s+(v.views||0),0),"Views"],["❤️",c.videos.reduce((s,v)=>s+(v.likes||0),0),"Likes"],["🎬",c.videos.length,"Videos"]].map(([icon,val,lbl])=>(
@@ -1061,7 +1079,7 @@ function AgencyPortal({ data, setData, onLogout }) {
                         {syncStatus[client.id]==="syncing"?"Syncen...":"TikTok Sync"}
                       </button>
                       <Btn small outline color={T.border} onClick={saveMonth}>💾 Maand opslaan</Btn>
-                      <Btn small outline color={T.green} onClick={()=>setShowPDF(true)}>📄 PDF</Btn>
+                      <Btn small outline color={T.green} onClick={()=>setPdfClient(client)}>📄 PDF</Btn>
                     </div>
                   </div>
 
@@ -1352,8 +1370,7 @@ function App() {
 }
 
 
-    const root = ReactDOM.createRoot(document.getElementById('root'));
-    root.render(<App/>);
+    ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
   </script>
 </body>
 </html>
