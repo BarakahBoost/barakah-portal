@@ -10,10 +10,7 @@
   <meta name="apple-mobile-web-app-title" content="BarakahPortal"/>
   <link rel="apple-touch-icon" href="/icon-192.png"/>
   <title>BarakahPortal</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { background: #07080F; font-family: system-ui, -apple-system, sans-serif; }
-  </style>
+  <style>* { margin: 0; padding: 0; box-sizing: border-box; } body { background: #07080F; font-family: system-ui, -apple-system, sans-serif; }</style>
 </head>
 <body>
   <div id="root"></div>
@@ -633,7 +630,7 @@ function ClientPortal({ data, setData, clientId, onLogout }) {
   const prev = client.history[client.history.length-2];
   const totalV = client.videos.reduce((s,v)=>s+(v.views||0),0);
   const totalL = client.videos.reduce((s,v)=>s+(v.likes||0),0);
-  const totalF = client.videos.reduce((s,v)=>s+(v.followers||0),0);
+  const totalF = client.tiktokStats?.followers || client.videos.reduce((s,v)=>s+(v.followers||0),0);
   const myBookings = data.bookings.filter(b=>b.clientId===clientId).sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt));
   const chartData = client.history.map(h=>({name:MONTHS[parseInt(h.month.split("-")[1])-1],Views:h.views,Likes:h.likes,Volgers:h.followers}));
 
