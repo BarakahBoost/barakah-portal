@@ -12,10 +12,7 @@
   <title>BarakahPortal</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      background: #07080F;
-      font-family: system-ui, -apple-system, sans-serif;
-    }
+    body { background: #07080F; font-family: system-ui, -apple-system, sans-serif; }
   </style>
 </head>
 <body>
@@ -34,7 +31,7 @@
 // BACKEND URL — vul jouw Render.com URL in na deployment
 // Zie HANDLEIDING.md voor instructies
 // ═══════════════════════════════════════════════════════════
-const BACKEND_URL = "https://barakah-portal-api.onrender.com";
+const BACKEND_URL = "JOUW_RENDER_URL_HIER";
 // Voorbeeld: const BACKEND_URL = "https://barakah-portal-api.onrender.com";
 
 // ═══════════════════════════════════════════════════════════
@@ -1169,7 +1166,7 @@ function AgencyPortal({ data, setData, onLogout }) {
                           }}>🗑 Verwijderen</button></div>
                     </div>
                     <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8}}>
-                      {[["👁",c.videos.reduce((s,v)=>s+(v.views||0),0),"Views"],["❤️",c.videos.reduce((s,v)=>s+(v.likes||0),0),"Likes"],["🎬",c.videos.length,"Videos"]].map(([icon,val,lbl])=>(
+                      {[["👁",c.videos.reduce((s,v)=>s+(v.views||0),0),"Views"],["❤️",c.videos.reduce((s,v)=>s+(v.likes||0),0),"Likes"],["👥",c.tiktokStats?.followers||0,"Volgers"],["🎬",c.videos.length,"Videos"]].map(([icon,val,lbl])=>(
                         <div key={lbl} style={{background:T.bg,borderRadius:10,padding:"9px",textAlign:"center"}}><div style={{fontSize:15}}>{icon}</div><div style={{color:T.text,fontWeight:800,fontSize:15}}>{fmt(val)}</div><div style={{color:T.muted,fontSize:11}}>{lbl}</div></div>
                       ))}
                     </div>
