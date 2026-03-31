@@ -12,7 +12,10 @@
   <title>BarakahPortal</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { background: #07080F; font-family: system-ui, -apple-system, sans-serif; }
+    body {
+      background: #07080F;
+      font-family: system-ui, -apple-system, sans-serif;
+    }
   </style>
 </head>
 <body>
@@ -31,7 +34,7 @@
 // BACKEND URL — vul jouw Render.com URL in na deployment
 // Zie HANDLEIDING.md voor instructies
 // ═══════════════════════════════════════════════════════════
-const BACKEND_URL = "https://barakah-portal-api.onrender.com";
+const BACKEND_URL = "JOUW_RENDER_URL_HIER";
 // Voorbeeld: const BACKEND_URL = "https://barakah-portal-api.onrender.com";
 
 // ═══════════════════════════════════════════════════════════
@@ -279,6 +282,7 @@ function VideoForm({ initial, onSave, onClose, clientColor }) {
   const [views,setViews]        = useState(initial?.views!=null?String(initial.views):"");
   const [likes,setLikes]        = useState(initial?.likes!=null?String(initial.likes):"");
   const [followers,setFollowers]= useState(initial?.followers!=null?String(initial.followers):"");
+  const [comments,setComments]  = useState(initial?.comments!=null?String(initial.comments):"");
   const [date,setDate]          = useState(initial?.date||new Date().toISOString().split("T")[0]);
   const [status,setStatus]      = useState("idle");
   const [msg,setMsg]            = useState("");
@@ -315,7 +319,7 @@ function VideoForm({ initial, onSave, onClose, clientColor }) {
 
   function save() {
     if(!url||!date) return;
-    onSave({ id:initial?.id||"v"+Date.now(), url, title, views:parseInt(views)||0, likes:parseInt(likes)||0, followers:parseInt(followers)||0, date });
+    onSave({ id:initial?.id||"v"+Date.now(), url, title, views:parseInt(views)||0, likes:parseInt(likes)||0, comments:parseInt(comments)||0, followers:parseInt(followers)||0, date });
   }
 
   const isValid = url.includes("tiktok.com") && date;
@@ -363,8 +367,8 @@ function VideoForm({ initial, onSave, onClose, clientColor }) {
           <span style={{color:T.text,fontWeight:700,fontSize:13}}>Stats handmatig invullen</span>
           <span style={{marginLeft:"auto",color:T.muted,fontSize:10}}>TikTok Creator Center</span>
         </div>
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8}}>
-          {[["👁","Views",views,setViews],["❤️","Likes",likes,setLikes],["👥","+Volgers",followers,setFollowers]].map(([icon,lbl,val,set])=>(
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:8}}>
+          {[["👁","Views",views,setViews],["❤️","Likes",likes,setLikes],["💬","Comments",comments,setComments],["👥","+Volgers",followers,setFollowers]].map(([icon,lbl,val,set])=>(
             <div key={lbl} style={{background:T.bg,borderRadius:10,padding:"10px 8px",textAlign:"center"}}>
               <div style={{fontSize:18,marginBottom:4}}>{icon}</div>
               <input type="number" value={val} onChange={e=>set(e.target.value)} placeholder="0"
@@ -584,7 +588,7 @@ function LoginScreen({ data, onLogin }) {
   const [email,setEmail]=useState(""); const [pass,setPass]=useState(""); const [err,setErr]=useState(""); const [tab,setTab]=useState("client");
   function doLogin() {
     setErr("");
-    if(tab==="agency") { if(pass===data.agency.password) onLogin({role:"agency"}); else setErr("Verkeerd wachtwoord"); }
+    if(tab==="agency") { if(pass===data.agency.password){ const s={role:"agency"}; localStorage.setItem(SESSION_KEY,JSON.stringify(s)); onLogin(s); if("Notification" in window && Notification.permission==="default") Notification.requestPermission(); } else setErr("Verkeerd wachtwoord"); }
     else { const c=data.clients.find(c=>c.email===email&&c.password===pass); if(c) onLogin({role:"client",clientId:c.id}); else setErr("E-mail of wachtwoord onjuist"); }
   }
   return (
@@ -651,9 +655,9 @@ function ClientPortal({ data, setData, clientId, onLogout }) {
   const monthLabel=MONTHS[new Date().getMonth()]+" "+new Date().getFullYear();
 
   return (
-    <div style={{minHeight:"100vh",background:T.bg,color:T.text,fontFamily:"DM Sans,Segoe UI,sans-serif",paddingBottom:isMob?88:0}}>
+    <div style={{minHeight:"100vh",background:T.bg,color:T.text,fontFamily:"DM Sans,Segoe UI,sans-serif",paddingBottom:isMob?"calc(88px + env(safe-area-inset-bottom,0px))":0}}>
       {/* Header */}
-      <div style={{background:T.surface,borderBottom:`1px solid ${T.border}`,padding:isMob?"13px 16px":"0 30px",display:"flex",alignItems:"center",justifyContent:"space-between",position:"sticky",top:0,zIndex:100,backdropFilter:"blur(12px)",minHeight:60}}>
+      <div style={{background:T.surface,borderBottom:`1px solid ${T.border}`,padding:isMob?"calc(env(safe-area-inset-top, 14px) + 14px) 16px 14px":"0 30px",display:"flex",alignItems:"center",justifyContent:"space-between",position:"sticky",top:0,zIndex:100,backdropFilter:"blur(12px)",minHeight:isMob?64:60}}>
         <LogoImg height={isMob?18:26}/>
         <div style={{display:"flex",alignItems:"center",gap:8}}>
           {!isMob&&<><Btn small color={color} onClick={()=>setShowPDF(true)}>📄 PDF</Btn><a href="https://wa.me/31685546310?text=Hoi%20BarakahPortal!%20Ik%20heb%20een%20vraag%3A%20" target="_blank" rel="noreferrer" style={{display:"inline-flex",alignItems:"center",gap:6,background:"transparent",border:`1.5px solid ${T.green}`,color:T.green,borderRadius:10,padding:"7px 14px",fontWeight:700,fontSize:13,textDecoration:"none"}}>💬 WhatsApp</a></>}
@@ -798,7 +802,16 @@ function ClientPortal({ data, setData, clientId, onLogout }) {
               <Card key={b.id} style={{padding:"15px 18px",marginBottom:10,borderLeft:`3px solid ${sc(b.status)}`}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:8}}>
                   <div><div style={{color:T.text,fontWeight:700,fontSize:15,marginBottom:3}}>{new Date(b.date).toLocaleDateString("nl-NL",{weekday:"long",day:"numeric",month:"long",year:"numeric"})}</div><div style={{color:T.textDim,fontSize:13}}>🕐 {b.time} uur</div>{b.note&&<div style={{color:T.mutedLight,fontSize:12,marginTop:2}}>📝 {b.note}</div>}</div>
-                  <Badge color={sc(b.status)}>{sl(b.status)}</Badge>
+                  <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+                    <Badge color={sc(b.status)}>{sl(b.status)}</Badge>
+                    {b.status==="pending"&&(
+                      <button
+                        onClick={()=>setData(d=>({...d,bookings:d.bookings.filter(bk=>bk.id!==b.id)}))}
+                        style={{background:"transparent",border:`1px solid ${T.red}`,color:T.red,borderRadius:8,padding:"3px 10px",fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
+                        ✕ Annuleren
+                      </button>
+                    )}
+                  </div>
                 </div>
                 {b.agencyNote&&<div style={{marginTop:10,background:T.surface,borderRadius:10,padding:"9px 13px",borderLeft:`3px solid ${sc(b.status)}`}}><div style={{color:T.muted,fontSize:10,fontWeight:700,marginBottom:3,textTransform:"uppercase",letterSpacing:1}}>Bericht BarakahPortal</div><div style={{color:T.textDim,fontSize:13}}>{b.agencyNote}</div></div>}
               </Card>
@@ -809,7 +822,7 @@ function ClientPortal({ data, setData, clientId, onLogout }) {
 
       {/* Mobile bottom nav */}
       {isMob&&(
-        <div style={{position:"fixed",bottom:0,left:0,right:0,background:T.surface+"F8",backdropFilter:"blur(16px)",borderTop:`1px solid ${T.border}`,padding:"7px 0 calc(7px + env(safe-area-inset-bottom,0px))",display:"flex",justifyContent:"space-around",zIndex:100}}>
+        <div style={{position:"fixed",bottom:0,left:0,right:0,background:T.surface+"F8",backdropFilter:"blur(16px)",borderTop:`1px solid ${T.border}`,padding:"7px 0 calc(10px + env(safe-area-inset-bottom,0px))",display:"flex",justifyContent:"space-around",zIndex:100}}>
           {tabs.map(([id,icon,lbl])=>(
             <button key={id} onClick={()=>setTab(id)} style={{background:"transparent",border:"none",display:"flex",flexDirection:"column",alignItems:"center",gap:2,color:tab===id?color:T.muted,cursor:"pointer",fontFamily:"inherit",padding:"3px 14px",fontWeight:tab===id?700:500,fontSize:10}}>
               <span style={{fontSize:22}}>{icon}</span>{lbl}
@@ -840,7 +853,7 @@ function ClientPortal({ data, setData, clientId, onLogout }) {
 // ═══════════════════════════════════════════════════════════
 function AgencyPortal({ data, setData, onLogout }) {
   const isMob = useIsMobile();
-  const [tab,setTab]               = useState("bookings");
+  const [tab,setTab]               = useState("dashboard");
   const [activeClient,setActiveClient] = useState(data.clients[0]?.id||null);
   const [sheet,setSheet]           = useState(null);
   const [editVideo,setEditVideo]   = useState(null);
@@ -879,26 +892,38 @@ function AgencyPortal({ data, setData, onLogout }) {
       });
       const d = await res.json();
       if(!d.success) throw new Error(d.error||"Onbekende fout");
-      const month  = nowMonth();
-      const totV   = d.videos.reduce((s,v)=>s+(v.views||0),0);
-      const totL   = d.videos.reduce((s,v)=>s+(v.likes||0),0);
-      const totF   = d.profile?.followers||0;
-      const entry  = {month,views:totV,likes:totL,followers:totF,videos:d.videos.length};
-      updateClientById(c.id, cl=>({
-        ...cl,
-        tiktokStats: d.profile,
-        videos: d.videos.map(v=>({
-          id:v.id, url:v.url, title:v.title||"(geen titel)",
-          views:v.views, likes:v.likes, followers:0, date:v.date, thumb:v.thumb
-        })),
-        package:{...cl.package, used:Math.min(d.videos.length, cl.package.total)},
-        history: cl.history.some(h=>h.month===month)
-          ? cl.history.map(h=>h.month===month?entry:h)
-          : [...cl.history,entry]
-      }));
+      // Als server volledige data teruggeeft, gebruik die (behoud alle klanten)
+      if(d.data && d.data.clients && d.data.clients.length > 0) {
+        setData(prev => {
+          const merged = {...prev, ...d.data};
+          // Zorg dat agency settings bewaard blijven
+          merged.agency = prev.agency;
+          save(merged);
+          return merged;
+        });
+      } else {
+        // Fallback: alleen deze klant updaten
+        const month  = nowMonth();
+        const totV   = (d.videos||[]).reduce((s,v)=>s+(v.views||0),0);
+        const totL   = (d.videos||[]).reduce((s,v)=>s+(v.likes||0),0);
+        const totF   = d.profile?.followers||0;
+        const entry  = {month,views:totV,likes:totL,followers:totF,videos:(d.videos||[]).length};
+        updateClientById(c.id, cl=>({
+          ...cl,
+          tiktokStats: d.profile,
+          videos: (d.videos||[]).map(v=>({
+            id:v.id, url:v.url, title:v.title||"(geen titel)",
+            views:v.views, likes:v.likes, comments:v.comments||0, followers:0, date:v.date, thumb:v.thumb
+          })),
+          package:{...cl.package, used:Math.min((d.videos||[]).length, cl.package.total)},
+          history: cl.history.some(h=>h.month===month)
+            ? cl.history.map(h=>h.month===month?entry:h)
+            : [...cl.history,entry]
+        }));
+      }
       setSyncStatus(s=>({...s,[c.id]:"ok"}));
       const t = new Date().toLocaleTimeString("nl-NL",{hour:"2-digit",minute:"2-digit"});
-      setSyncMsg(m=>({...m,[c.id]:`✅ ${d.videos.length} videos · ${t}`}));
+      setSyncMsg(m=>({...m,[c.id]:`✅ ${(d.videos||[]).length} videos · ${t}`}));
     } catch(err) {
       setSyncStatus(s=>({...s,[c.id]:"error"}));
       setSyncMsg(m=>({...m,[c.id]:`❌ ${err.message}`}));
@@ -930,25 +955,28 @@ function AgencyPortal({ data, setData, onLogout }) {
   }
 
   function addClient(){
+    const startF = parseInt(cForm.startFollowers)||0;
     const nc={id:"c"+Date.now(),name:cForm.name,email:cForm.email,password:cForm.password,color:cForm.color,
       tiktokProfile:cForm.tiktokProfile,
+      startFollowers: startF,
       package:{total:parseInt(cForm.packageTotal)||8,used:0,label:cForm.packageLabel},
-      history:[],videos:[]};
+      history: startF > 0 ? [{month:new Date().toISOString().slice(0,7),views:0,likes:0,followers:startF,videos:0}] : [],
+      videos:[]};
     setData(d=>({...d,clients:[...d.clients,nc]})); setSheet(null);
   }
 
   const sc=s=>s==="accepted"?T.green:s==="declined"?T.red:T.gold;
   const sl=s=>s==="accepted"?"✅ Bevestigd":s==="declined"?"❌ Afgewezen":"⏳ Wacht op actie";
   const allBookings=[...data.bookings].sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt));
-  const tabs=[["bookings","📅","Aanvragen"],["clients","👥","Klanten"],["stats","📊","Statistieken"],["settings","⚙️","Instellingen"]];
+  const tabs=[["dashboard","🏠","Dashboard"],["bookings","📅","Aanvragen"],["clients","👥","Klanten"],["stats","📊","Statistieken"],["settings","⚙️","Instellingen"]];
   const totalV=client?.videos.reduce((s,v)=>s+(v.views||0),0)??0;
   const totalL=client?.videos.reduce((s,v)=>s+(v.likes||0),0)??0;
   const totalF=client?.tiktokStats?.followers||0;
   const prevH =client?.history?.[client.history.length-2];
   return (
-    <div style={{minHeight:"100vh",background:T.bg,color:T.text,fontFamily:"DM Sans,Segoe UI,sans-serif",paddingBottom:isMob?88:0}}>
+    <div style={{minHeight:"100vh",background:T.bg,color:T.text,fontFamily:"DM Sans,Segoe UI,sans-serif",paddingBottom:isMob?"calc(88px + env(safe-area-inset-bottom,0px))":0}}>
       {/* Header */}
-      <div style={{background:T.surface,borderBottom:`1px solid ${T.border}`,padding:isMob?"13px 16px":"0 30px",display:"flex",alignItems:"center",justifyContent:"space-between",position:"sticky",top:0,zIndex:100,backdropFilter:"blur(12px)",minHeight:60}}>
+      <div style={{background:T.surface,borderBottom:`1px solid ${T.border}`,padding:isMob?"env(safe-area-inset-top, 13px) 16px 13px":"0 30px",display:"flex",alignItems:"center",justifyContent:"space-between",position:"sticky",top:0,zIndex:100,backdropFilter:"blur(12px)",minHeight:60}}>
         <LogoImg height={isMob?18:26}/>
         <div style={{display:"flex",alignItems:"center",gap:8}}>
           <div style={{background:T.accentSoft,border:`1px solid ${T.accent}33`,borderRadius:8,padding:"3px 10px"}}><span style={{color:T.accent,fontSize:11,fontWeight:700}}>🌿 Agency</span></div>
@@ -972,7 +1000,7 @@ function AgencyPortal({ data, setData, onLogout }) {
                 </button>
               );
             })}
-            <button onClick={()=>{setCForm({name:"",email:"",password:"",color:CLIENT_COLORS[data.clients.length%CLIENT_COLORS.length],tiktokProfile:"",packageTotal:"8",packageLabel:"8 videos/maand"});setSheet("addClient");}} style={{width:"100%",background:"transparent",border:`1px dashed ${T.border}`,borderRadius:10,padding:"9px 12px",cursor:"pointer",color:T.muted,fontSize:12,marginTop:8,fontFamily:"inherit"}}>+ Klant toevoegen</button>
+            <button onClick={()=>{setCForm({name:"",email:"",password:"",color:CLIENT_COLORS[data.clients.length%CLIENT_COLORS.length],tiktokProfile:"",packageTotal:"8",packageLabel:"8 videos/maand",startFollowers:""});setSheet("addClient");}} style={{width:"100%",background:"transparent",border:`1px dashed ${T.border}`,borderRadius:10,padding:"9px 12px",cursor:"pointer",color:T.muted,fontSize:12,marginTop:8,fontFamily:"inherit"}}>+ Klant toevoegen</button>
             <div style={{height:1,background:T.border,margin:"14px 0"}}/>
             {tabs.map(([id,icon,lbl])=>(
               <button key={id} onClick={()=>setTab(id)} style={{width:"100%",background:tab===id?T.primaryMid+"22":"transparent",border:tab===id?`1px solid ${T.primaryMid}33`:"1px solid transparent",borderRadius:10,padding:"10px 12px",cursor:"pointer",display:"flex",alignItems:"center",gap:8,marginBottom:3,color:tab===id?T.accentBright:T.mutedLight,fontFamily:"inherit",fontSize:13,fontWeight:600,transition:"all 0.15s"}}>
@@ -984,6 +1012,100 @@ function AgencyPortal({ data, setData, onLogout }) {
         )}
 
         <div style={{flex:1,padding:isMob?"14px 14px":28,overflowY:"auto"}}>
+
+          {/* DASHBOARD */}
+          {tab==="dashboard"&&(
+            <>
+              <h2 style={{margin:"0 0 20px",fontSize:19,fontWeight:900}}>🏠 Dashboard</h2>
+
+              {/* Totaalcijfers */}
+              <div style={{display:"grid",gridTemplateColumns:isMob?"1fr 1fr":"repeat(4,1fr)",gap:10,marginBottom:20}}>
+                {[
+                  ["👥","Klanten",data.clients.length,T.accentBright],
+                  ["📅","Openstaand",data.bookings.filter(b=>b.status==="pending").length,T.gold],
+                  ["🎬","Videos totaal",data.clients.reduce((s,c)=>s+c.videos.length,0),T.blue],
+                  ["👁","Views totaal",data.clients.reduce((s,c)=>s+c.videos.reduce((sv,v)=>sv+(v.views||0),0),0),T.green],
+                ].map(([icon,lbl,val,col])=>(
+                  <Card key={lbl} style={{padding:"16px",textAlign:"center"}}>
+                    <div style={{fontSize:24,marginBottom:6}}>{icon}</div>
+                    <div style={{fontSize:22,fontWeight:900,color:col}}>{fmt(val)}</div>
+                    <div style={{color:T.muted,fontSize:11,fontWeight:700,marginTop:3,textTransform:"uppercase",letterSpacing:1}}>{lbl}</div>
+                  </Card>
+                ))}
+              </div>
+
+              {/* Klanten overzicht */}
+              <div style={{color:T.muted,fontSize:11,fontWeight:700,textTransform:"uppercase",letterSpacing:1.2,marginBottom:12}}>Klanten overzicht</div>
+              {data.clients.length===0?(
+                <Card style={{padding:36,textAlign:"center"}}>
+                  <div style={{fontSize:32,marginBottom:10}}>👥</div>
+                  <div style={{color:T.mutedLight,marginBottom:14}}>Nog geen klanten — voeg je eerste toe!</div>
+                  <Btn color={T.primaryMid} onClick={()=>{setCForm({name:"",email:"",password:"",color:CLIENT_COLORS[0],tiktokProfile:"",packageTotal:"8",packageLabel:"8 videos/maand",startFollowers:""});setSheet("addClient");}}>+ Klant toevoegen</Btn>
+                </Card>
+              ):(
+                <div style={{display:"grid",gridTemplateColumns:isMob?"1fr":"1fr 1fr",gap:10}}>
+                  {data.clients.map(c=>{
+                    const totV = c.videos.reduce((s,v)=>s+(v.views||0),0);
+                    const totL = c.videos.reduce((s,v)=>s+(v.likes||0),0);
+                    const left = c.package.total - c.package.used;
+                    const lastSync = c.lastSync ? new Date(c.lastSync).toLocaleDateString("nl-NL") : null;
+                    return(
+                      <Card key={c.id} style={{padding:"16px",cursor:"pointer",border:`1px solid ${c.color}33`}}
+                        onClick={()=>{setActiveClient(c.id);setTab("stats");}}>
+                        <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:12}}>
+                          <div style={{width:40,height:40,borderRadius:12,background:c.color+"22",border:`1px solid ${c.color}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,fontWeight:900,color:c.color,flexShrink:0}}>{c.name.charAt(0)}</div>
+                          <div style={{flex:1,minWidth:0}}>
+                            <div style={{fontWeight:800,fontSize:14,color:T.text,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{c.name}</div>
+                            <div style={{color:T.muted,fontSize:11}}>{c.package.label}</div>
+                          </div>
+                          <Badge color={left<=2?T.red:c.color}>{left} over</Badge>
+                        </div>
+                        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6}}>
+                          {[["👁",totV,"Views"],["❤️",totL,"Likes"],["🎬",c.videos.length,"Videos"]].map(([icon,val,lbl])=>(
+                            <div key={lbl} style={{background:T.bg,borderRadius:8,padding:"8px 6px",textAlign:"center"}}>
+                              <div style={{fontSize:13}}>{icon}</div>
+                              <div style={{color:T.text,fontWeight:800,fontSize:13}}>{fmt(val)}</div>
+                              <div style={{color:T.muted,fontSize:10}}>{lbl}</div>
+                            </div>
+                          ))}
+                        </div>
+                        {lastSync&&<div style={{color:T.muted,fontSize:10,marginTop:8,textAlign:"right"}}>Sync: {lastSync}</div>}
+                      </Card>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Recente aanvragen */}
+              {data.bookings.filter(b=>b.status==="pending").length>0&&(
+                <>
+                  <div style={{color:T.gold,fontSize:11,fontWeight:700,textTransform:"uppercase",letterSpacing:1.2,margin:"20px 0 12px"}}>
+                    🔔 {data.bookings.filter(b=>b.status==="pending").length} openstaande aanvragen
+                  </div>
+                  {data.bookings.filter(b=>b.status==="pending").slice(0,3).map(b=>{
+                    const bc = data.clients.find(c=>c.id===b.clientId);
+                    return(
+                      <Card key={b.id} style={{padding:"12px 16px",marginBottom:8,borderLeft:`3px solid ${T.gold}`,cursor:"pointer"}}
+                        onClick={()=>setTab("bookings")}>
+                        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                          <div>
+                            <div style={{fontWeight:700,fontSize:14,color:T.text}}>{bc?.name||"?"}</div>
+                            <div style={{color:T.muted,fontSize:12}}>📅 {new Date(b.date).toLocaleDateString("nl-NL")} · 🕐 {b.time}</div>
+                          </div>
+                          <Badge color={T.gold}>⏳ Wacht</Badge>
+                        </div>
+                      </Card>
+                    );
+                  })}
+                  {data.bookings.filter(b=>b.status==="pending").length>3&&(
+                    <button onClick={()=>setTab("bookings")} style={{background:"transparent",border:`1px solid ${T.border}`,color:T.muted,borderRadius:10,padding:"8px 16px",cursor:"pointer",fontFamily:"inherit",fontSize:13,width:"100%",marginTop:4}}>
+                      Alle aanvragen bekijken →
+                    </button>
+                  )}
+                </>
+              )}
+            </>
+          )}
 
           {/* BOOKINGS */}
           {tab==="bookings"&&(
@@ -1026,7 +1148,7 @@ function AgencyPortal({ data, setData, onLogout }) {
                   }}>
                     {syncAll?"⏳ Alle klanten syncen...":"🔄 Alle klanten syncen"}
                   </button>
-                  <Btn small color={T.primaryMid} onClick={()=>{setCForm({name:"",email:"",password:"",color:CLIENT_COLORS[data.clients.length%CLIENT_COLORS.length],tiktokProfile:"",packageTotal:"8",packageLabel:"8 videos/maand"});setSheet("addClient");}}>+ Toevoegen</Btn>
+                  <Btn small color={T.primaryMid} onClick={()=>{setCForm({name:"",email:"",password:"",color:CLIENT_COLORS[data.clients.length%CLIENT_COLORS.length],tiktokProfile:"",packageTotal:"8",packageLabel:"8 videos/maand",startFollowers:""});setSheet("addClient");}}>+ Toevoegen</Btn>
                 </div>
               </div>
               {data.clients.map(c=>{
@@ -1251,7 +1373,7 @@ function AgencyPortal({ data, setData, onLogout }) {
       </div>
 
       {/* Mobile bottom nav */}
-      {isMob&&(<div style={{position:"fixed",bottom:0,left:0,right:0,background:T.surface+"F8",backdropFilter:"blur(16px)",borderTop:`1px solid ${T.border}`,padding:"7px 0 calc(7px + env(safe-area-inset-bottom,0px))",display:"flex",justifyContent:"space-around",zIndex:100}}>
+      {isMob&&(<div style={{position:"fixed",bottom:0,left:0,right:0,background:T.surface+"F8",backdropFilter:"blur(16px)",borderTop:`1px solid ${T.border}`,padding:"7px 0 calc(10px + env(safe-area-inset-bottom,0px))",display:"flex",justifyContent:"space-around",zIndex:100}}>
         {tabs.map(([id,icon,lbl])=>(<button key={id} onClick={()=>setTab(id)} style={{background:"transparent",border:"none",display:"flex",flexDirection:"column",alignItems:"center",gap:2,color:tab===id?T.accentBright:T.muted,cursor:"pointer",fontFamily:"inherit",padding:"3px 14px",fontWeight:tab===id?700:500,fontSize:10,position:"relative"}}><span style={{fontSize:22}}>{icon}</span>{id==="bookings"&&pending.length>0&&<span style={{position:"absolute",top:0,right:6,background:T.red,color:"#fff",borderRadius:99,width:15,height:15,display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:800}}>{pending.length}</span>}{lbl}</button>))}
       </div>)}
 
@@ -1271,6 +1393,7 @@ function AgencyPortal({ data, setData, onLogout }) {
             <div style={{color:T.mutedLight,fontSize:11,fontWeight:700,textTransform:"uppercase",letterSpacing:1.2,marginBottom:7}}>Kleur</div>
             <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>{CLIENT_COLORS.map(col=>(<button key={col} onClick={()=>setCForm(f=>({...f,color:col}))} style={{width:34,height:34,borderRadius:9,background:col,cursor:"pointer",border:cForm.color===col?"3px solid #fff":"3px solid transparent"}}/>))}</div>
           </div>
+          <Inp label="👥 Beginvolgers" value={cForm.startFollowers||""} onChange={v=>setCForm(f=>({...f,startFollowers:v}))} type="number" placeholder="Bijv. 1250 (huidig aantal volgers)"/>
           <div style={{display:"grid",gridTemplateColumns:"1fr 2fr",gap:10}}>
             <Inp label="Videos/maand" value={cForm.packageTotal} onChange={v=>setCForm(f=>({...f,packageTotal:v}))} type="number"/>
             <Inp label="Pakket naam" value={cForm.packageLabel} onChange={v=>setCForm(f=>({...f,packageLabel:v}))} placeholder="Pro — 12 videos/maand"/>
@@ -1288,6 +1411,21 @@ function AgencyPortal({ data, setData, onLogout }) {
 // ═══════════════════════════════════════════════════════════
 // ROOT
 // ═══════════════════════════════════════════════════════════
+// ─── PUSH NOTIFICATIES ──────────────────────────────────
+function sendNotification(title, body, icon="/icon-192.png") {
+  if(!("Notification" in window)) return;
+  const show = () => {
+    try {
+      new Notification(title, { body, icon, badge: icon, vibrate: [200,100,200] });
+    } catch {}
+  };
+  if(Notification.permission === "granted") {
+    show();
+  } else if(Notification.permission !== "denied") {
+    Notification.requestPermission().then(p => { if(p==="granted") show(); });
+  }
+}
+
 // PWA Install prompt
 let deferredPrompt = null;
 if (typeof window !== 'undefined') {
@@ -1297,9 +1435,14 @@ if (typeof window !== 'undefined') {
   });
 }
 
+const SESSION_KEY = "barakah_session";
+
 function App() {
   const [data,setData] = useState(()=>load()||DEMO);
-  const [session,setSession] = useState(null);
+  const [session,setSession] = useState(()=>{
+    try { return JSON.parse(localStorage.getItem(SESSION_KEY)||"null"); }
+    catch { return null; }
+  });
   const [showInstall,setShowInstall] = useState(false);
 
   useEffect(()=>{
@@ -1351,11 +1494,26 @@ function App() {
   },[]);
   useEffect(()=>{save(data);},[data]);
 
+  // Notificatie bij nieuwe boeking (voor agency)
+  const prevBookingsRef = React.useRef(null);
+  useEffect(()=>{
+    if(session?.role !== "agency") return;
+    const pending = data.bookings.filter(b=>b.status==="pending");
+    if(prevBookingsRef.current !== null && pending.length > prevBookingsRef.current) {
+      const newest = data.bookings.filter(b=>b.status==="pending").slice(-1)[0];
+      sendNotification(
+        "📅 Nieuwe opname aanvraag!",
+        newest ? `${newest.clientName||"Een klant"} wil opnemen op ${newest.date}` : "Nieuwe aanvraag ontvangen"
+      );
+    }
+    prevBookingsRef.current = pending.length;
+  },[data.bookings, session]);
+
   const portal = !session
     ? <LoginScreen data={data} onLogin={setSession}/>
     : session.role==="agency"
-      ? <AgencyPortal data={data} setData={setDataWrapped} onLogout={()=>setSession(null)}/>
-      : <ClientPortal data={data} setData={setDataWrapped} clientId={session.clientId} onLogout={()=>setSession(null)}/>;
+      ? <AgencyPortal data={data} setData={setDataWrapped} onLogout={()=>{localStorage.removeItem(SESSION_KEY);setSession(null);}}/>
+      : <ClientPortal data={data} setData={setDataWrapped} clientId={session.clientId} onLogout={()=>{localStorage.removeItem(SESSION_KEY);setSession(null);}}/>;
 
   return (
     <>
